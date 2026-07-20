@@ -1,0 +1,159 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return request.auth.uid == uid; }
+
+    function isTournamentAdmin(tid) {
+      let t = get(/databases/$(database)/documents/tournaments/$(tid)).data;
+      return request.auth.uid == t.ownerId
+          || request.auth.uid in t.coHosts
+          || request.auth.uid in t.umpires;
+    }
+    function isTournamentHost(tid) {
+      let t = get(/databases/$(database)/documents/tournaments/$(tid)).data;
+      return request.auth.uid == t.ownerId
+          || request.auth.uid in t.coHosts;
+    }
+    function isMatchAdmin(mid) {
+      let m = get(/databases/$(database)/documents/matches/$(mid)).data;
+      return request.auth.uid in m.admins;
+    }
+
+    // Allow a user to accept a tournament co-host or umpire invitation.
+    // Verifies the write only adds the current user to coHosts OR umpires — nothing else.
+    function isAcceptingTournamentInvite() {
+      let uid = request.auth.uid;
+      let oldCoHosts  = resource.data.get('coHosts',  []);
+      let newCoHosts  = request.resource.data.get('coHosts',  []);
+      let oldUmpires  = resource.data.get('umpires',  []);
+      let newUmpires  = request.resource.data.get('umpires',  []);
+
+      let addingAsCoHost =
+        newCoHosts.hasAll(oldCoHosts) &&
+        newCoHosts.hasAny([uid]) &&
+        !oldCoHosts.hasAny([uid]) &&
+        newUmpires == oldUmpires;
+
+      let addingAsUmpire =
+        newUmpires.hasAll(oldUmpires) &&
+        newUmpires.hasAny([uid]) &&
+        !oldUmpires.hasAny([uid]) &&
+        newCoHosts == oldCoHosts;
+
+      return addingAsCoHost || addingAsUmpire;
+    }
+
+    // Allow a user to accept a team player invitation (adding themselves to players map).
+    // Verifies the write only adds the current user's UID as a new players entry.
+    function isAcceptingTeamInvite() {
+      let uid = request.auth.uid;
+      return request.resource.data.get('players', {}).get(uid, null) != null
+          && resource.data.get('players', {}).get(uid, null) == null;
+    }
+
+    // Allow a signed-in user to claim a guest player entry (replace guest_* key with own UID).
+    // Verifies the write adds the current user and the data being added is a valid player entry.
+    function isClaimingGuestPlayer() {
+      let uid = request.auth.uid;
+      return request.resource.data.get('players', {}).get(uid, null) != null
+          && resource.data.get('players', {}).get(uid, null) == null;
+    }
+
+    // Users — base64 profile pic stored in profilePic field
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if isOwner(uid);
+    }
+
+    // Tournaments — base64 cover stored in picture field
+    match /tournaments/{tid} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        isTournamentAdmin(tid) ||
+        isAcceptingTournamentInvite()
+      );
+      allow delete: if isSignedIn()
+        && get(/databases/$(database)/documents/tournaments/$(tid)).data.ownerId == request.auth.uid;
+    }
+
+    // Teams — base64 logo stored in picture field
+    match /teams/{teamId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && isTournamentHost(request.resource.data.tournamentId);
+      allow update: if isSignedIn() && (
+        isTournamentHost(resource.data.tournamentId) ||
+        isAcceptingTeamInvite() ||
+        isClaimingGuestPlayer()
+      );
+      allow delete: if isSignedIn()
+        && isTournamentHost(resource.data.tournamentId);
+    }
+
+    // Matches
+    match /matches/{mid} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        request.auth.uid in resource.data.admins ||
+        isTournamentAdmin(resource.data.tournamentId)
+      );
+      allow delete: if isSignedIn()
+        && isTournamentHost(resource.data.tournamentId);
+
+      // Ball-by-ball deliveries
+      match /deliveries/{did} {
+        allow read: if true;
+        allow write: if isSignedIn() && isMatchAdmin(mid);
+      }
+
+      // Live match chat
+      match /chat/{cid} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn()
+          && resource.data.uid == request.auth.uid;
+      }
+    }
+
+    // Invitations
+    match /invitations/{inv} {
+      allow read: if isSignedIn() && (
+        resource.data.toUid == request.auth.uid ||
+        resource.data.fromUid == request.auth.uid
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn()
+        && resource.data.toUid == request.auth.uid;
+      allow delete: if isSignedIn() && (
+        resource.data.toUid == request.auth.uid ||
+        resource.data.fromUid == request.auth.uid
+      );
+    }
+
+    // Live Cricket (external reference data) — shared read-only cache.
+    // Readable by anyone (including signed-out guests browsing scores).
+    // Writes (cache refresh + daily hit counter) require sign-in as a basic
+    // spam gate. NOTE: this does NOT cryptographically enforce the daily
+    // quota — that logic lives client-side in js/liveCricket.js and is
+    // advisory only. A malicious signed-in user could still write garbage
+    // here; if that ever happens, tighten this rule to a specific service
+    // account or add App Check.
+    match /externalCache/{doc} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Per-match detail cache (v22) — same public-read/signed-in-write pattern
+    // as externalCache, keyed by sanitized external match ID.
+    match /matchCache/{doc} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+  }
+}

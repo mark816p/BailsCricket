@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0"/>
+  <title>Bails — Cricket Scorer</title>
+  <meta name="description" content="Bails: Score matches, manage tournaments, track cricket stats."/>
+  <meta name="theme-color" content="#0f0f11"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏏</text></svg>"/>
+  <link rel="stylesheet" href="/css/main.css"/>
+
+  <!-- Canonical Domain Redirect (Cross-Domain SSO) -->
+  <script>
+    (function() {
+      var hostname = window.location.hostname;
+      if (hostname === 'bailscricket.web.app' || hostname === 'bails-scorer.web.app') {
+        window.location.replace('https://bails-cricketscorer.web.app' + window.location.pathname + window.location.search + window.location.hash);
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div id="app-loader" class="loader-screen">
+    <div class="loader-cricket">🏏</div>
+    <div class="loader-brand">Bails</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+  </div>
+  <div id="toast-container" aria-live="polite"></div>
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal-box" class="modal-box"><div id="modal-body"></div></div>
+  </div>
+  <div id="login-prompt" class="login-prompt hidden">
+    <div class="login-prompt-inner">
+      <span>🔐 Sign in to unlock all features</span>
+      <a href="#/login" class="btn btn-sm btn-accent">Sign In</a>
+      <button id="dismiss-login-prompt" class="btn-icon" aria-label="Dismiss">✕</button>
+    </div>
+  </div>
+
+  <nav id="main-nav" class="main-nav">
+    <a class="nav-brand" href="#/">🏏 <span>Bails</span></a>
+    <div class="nav-links">
+      <a class="nav-link" href="#/dashboard" data-page="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a class="nav-link" href="#/search" data-page="search">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Search</span>
+      </a>
+      <a class="nav-link" href="#/my-matches" data-page="my-matches">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        <span>My Matches</span>
+      </a>
+      <a class="nav-link" href="#/tournaments" data-page="tournaments">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16M12 22V11.5M8 22V11.5M16 22V11.5M20 4H4v7.5c0 2.5 2 4.5 4.5 4.5h7c2.5 0 4.5-2 4.5-4.5V4z"/></svg>
+        <span>Tournaments</span>
+      </a>
+      <a class="nav-link" href="#/profile" data-page="profile" id="nav-profile-link">
+        <div id="nav-avatar-wrap" class="nav-avatar-wrap">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <span id="nav-profile-label">Sign In</span>
+      </a>
+    </div>
+  </nav>
+
+  <div id="global-back-bar">
+    <button onclick="Router.back()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      <span id="global-back-label">Back</span>
+    </button>
+  </div>
+  <main id="page-root"></main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/router.js"></script>
+  <script src="/js/liveCricketConfig.js"></script>
+  <script src="/js/liveCricket.js"></script>
+
+  <script src="/js/pages/legal.js"></script>
+  <script src="/js/pages/landing.js"></script>
+  <script src="/js/pages/dashboard.js"></script>
+  <script src="/js/pages/search.js"></script>
+  <script src="/js/pages/my-matches.js"></script>
+  <script src="/js/pages/tournaments.js"></script>
+  <script src="/js/pages/tournament-detail.js"></script>
+  <script src="/js/pages/team-detail.js"></script>
+  <script src="/js/pages/match-detail.js"></script>
+  <script src="/js/pages/match-scoring.js"></script>
+  <script src="/js/pages/profile.js"></script>
+  <script src="/js/pages/player-profile.js"></script>
+  <script src="/js/pages/live-cricket.js"></script>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Register the service worker, and if a NEWER service worker takes control
+    // (i.e. this deploy bumped the cache version), force one reload so the
+    // user immediately gets the fresh app shell instead of staying on
+    // whatever was cached on their very first visit.
+    if ('serviceWorker' in navigator) {
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(console.error);
+      });
+    }
+  </script>
+</body>
+</html>

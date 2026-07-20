@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Bails — Seed "The Claude Sims" Tournament</title>
+<meta name="robots" content="noindex,nofollow"/>
+<style>
+  body { background:#0c0c0e; color:#f0f0f2; font-family:system-ui,-apple-system,sans-serif; max-width:640px; margin:40px auto; padding:0 20px; line-height:1.6; }
+  h1 { font-size:22px; } p { color:#9898a8; font-size:14px; }
+  button { background:#22c55e; color:#000; border:none; padding:14px 20px; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; margin-right:10px; margin-top:10px; }
+  button:disabled { background:#4a4a58; color:#9898a8; cursor:not-allowed; }
+  button.danger { background:#ef4444; color:#fff; }
+  #log { background:#16161a; border:1px solid #2c2c35; border-radius:10px; padding:16px; margin-top:20px; font-family:monospace; font-size:12px; white-space:pre-wrap; max-height:420px; overflow-y:auto; }
+  .warn { color:#f59e0b; }
+  .ok { color:#22c55e; }
+  .err { color:#ef4444; }
+</style>
+</head>
+<body>
+  <h1>🏏 Seed "The Claude Sims" Tournament</h1>
+  <p>
+    One-time dev utility. Creates 4 teams, 10 fully-scored matches (with ball-by-ball
+    delivery history), and a tournament called <strong>"The Claude Sims"</strong> in the
+    <strong>live</strong> Bails Firestore — the same data verified by the automated
+    statistics-consistency audit (1,028/1,028 checks) documented in CLAUDE.md.
+  </p>
+  <p class="warn">
+    ⚠️ This writes REAL documents to production Firestore, visible to anyone using the
+    app (matches are public-read). Delete the tournament afterward with the button below
+    once you're done using it for QA, if you don't want it visible to real users.
+  </p>
+  <p>You must be signed in to Bails (Google or X) in this browser tab for writes to succeed — Firestore rules require sign-in to write.</p>
+
+  <button id="signin-btn">1. Sign in first</button>
+  <button id="seed-btn" disabled>2. Seed "The Claude Sims"</button>
+  <button id="delete-btn" class="danger" disabled>Delete "The Claude Sims" (cleanup)</button>
+
+  <div id="log">Waiting…</div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="/js/config.js"></script>
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg, cls) { const line = document.createElement('div'); if (cls) line.className = cls; line.textContent = msg; logEl.appendChild(line); logEl.scrollTop = logEl.scrollHeight; }
+
+    const signinBtn = document.getElementById('signin-btn');
+    const seedBtn   = document.getElementById('seed-btn');
+    const deleteBtn = document.getElementById('delete-btn');
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        log(`Signed in as ${user.displayName || user.uid}`, 'ok');
+        signinBtn.textContent = `✓ Signed in as ${user.displayName || user.uid}`;
+        signinBtn.disabled = true;
+        seedBtn.disabled = false;
+        deleteBtn.disabled = false;
+      }
+    });
+
+    signinBtn.onclick = async () => {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+      } catch (e) { log('Sign-in failed: ' + e.message, 'err'); }
+    };
+
+    // Chunked batch writer — Firestore hard-caps a batch at 500 operations,
+    // this uses 400 to leave headroom.
+    async function commitInChunks(ops) {
+      const CHUNK = 400;
+      for (let i = 0; i < ops.length; i += CHUNK) {
+        const batch = db.batch();
+        ops.slice(i, i + CHUNK).forEach(op => op(batch));
+        await batch.commit();
+        log(`  committed ${Math.min(i+CHUNK, ops.length)}/${ops.length} writes…`);
+      }
+    }
+
+    seedBtn.onclick = async () => {
+      seedBtn.disabled = true;
+      try {
+        log('Fetching seed data…');
+        const res = await fetch('/claude-sims-seed-data.json');
+        const seed = await res.json();
+
+        const user = auth.currentUser;
+        log('Creating tournament doc…');
+        await db.collection('tournaments').doc(seed.tournament.id).set({
+          ...seed.tournament,
+          ownerId: user.uid,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        log(`Creating ${seed.teams.length} teams…`);
+        const teamOps = seed.teams.map(t => (batch) => {
+          batch.set(db.collection('teams').doc(t.id), { ...t, ownerId: user.uid });
+        });
+        await commitInChunks(teamOps);
+
+        log(`Creating ${seed.matches.length} matches + delivery history…`);
+        let totalDeliveries = 0;
+        for (const { match, deliveries } of seed.matches) {
+          await db.collection('matches').doc(match.id).set({
+            ...match,
+            // isMatchAdmin() in firestore.rules checks match.admins ONLY (no
+            // tournament-owner fallback) — without this, the delivery writes
+            // just below would be rejected with permission-denied.
+            admins: [user.uid],
+            scheduledAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          const delivOps = deliveries.map(d => (batch) => {
+            const ref = db.collection('matches').doc(match.id).collection('deliveries').doc();
+            batch.set(ref, { ...d, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+          });
+          await commitInChunks(delivOps);
+          totalDeliveries += deliveries.length;
+          log(`  ✓ ${match.id} (${match.team1Name} vs ${match.team2Name}) — ${deliveries.length} deliveries`);
+        }
+
+        log(`\nDone. Tournament "The Claude Sims" created: 4 teams, 10 matches, ${totalDeliveries} deliveries.`, 'ok');
+        log('Open the app and check Tournaments → "The Claude Sims" to view it.', 'ok');
+      } catch (e) {
+        log('ERROR: ' + e.message, 'err');
+        console.error(e);
+      } finally {
+        seedBtn.disabled = false;
+      }
+    };
+
+    deleteBtn.onclick = async () => {
+      if (!confirm('Delete "The Claude Sims" tournament, its 4 teams, all 10 matches, and every delivery? This cannot be undone.')) return;
+      deleteBtn.disabled = true;
+      try {
+        log('Fetching seed data to know what to delete…');
+        const res = await fetch('/claude-sims-seed-data.json');
+        const seed = await res.json();
+
+        for (const { match } of seed.matches) {
+          const delivSnap = await db.collection('matches').doc(match.id).collection('deliveries').get();
+          const delOps = delivSnap.docs.map(d => (batch) => batch.delete(d.ref));
+          await commitInChunks(delOps);
+          await db.collection('matches').doc(match.id).delete();
+          log(`  deleted ${match.id}`);
+        }
+        const teamOps = seed.teams.map(t => (batch) => batch.delete(db.collection('teams').doc(t.id)));
+        await commitInChunks(teamOps);
+        await db.collection('tournaments').doc(seed.tournament.id).delete();
+        log('Done — "The Claude Sims" fully removed.', 'ok');
+      } catch (e) {
+        log('ERROR: ' + e.message, 'err');
+      } finally {
+        deleteBtn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

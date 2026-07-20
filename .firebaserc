@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "bails-cricketscorer"
+  },
+  "targets": {
+    "bails-cricketscorer": {
+      "hosting": {
+        "main": ["bails-cricketscorer"],
+        "bailscricket": ["bailscricket"],
+        "bails-scorer": ["bails-scorer"]
+      }
+    }
+  }
+}
