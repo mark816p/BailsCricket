@@ -127,10 +127,12 @@ const SearchPage = (() => {
     }
     for (const p of official) {
       const roleColor = {'Batter':'var(--accent)','Bowler':'var(--blue)','All-rounder':'var(--gold)','Wicket-keeper':'var(--green)'}[p.role]||'var(--muted)';
+      const pseudoUsername = '@' + p.name.toLowerCase().replace(/[^a-z0-9]/g, '');
       html += `<div class="card card-body" style="display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${flag(p.country)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:15px">${p.name}</div>
+          <div class="text-xs text-muted" style="margin-bottom:2px">${pseudoUsername}</div>
           <div class="text-xs" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px">
             ${p.country?`<span class="text-muted">${p.country}</span>`:''}
             ${p.role?`<span style="color:${roleColor};font-weight:600">${p.role}</span>`:''}

@@ -40,7 +40,7 @@ const DashboardPage = (() => {
           </div>
         </div>
         <div class="dash-quick-actions">
-          <a href="#/live-cricket" class="btn btn-outline btn-sm">🌐 Live Scores</a>
+          <a href="#nearby-list" class="btn btn-outline btn-sm">🌐 Live Scores</a>
           <a href="#/tournaments" class="btn btn-accent btn-sm">+ Tournament</a>
           <a href="#/my-matches" class="btn btn-outline btn-sm">My Matches</a>
         </div>
@@ -60,7 +60,6 @@ const DashboardPage = (() => {
             <span class="section-title">🏏 Live &amp; Upcoming Matches</span>
             <div style="display:flex;align-items:center;gap:8px">
               <span id="stale-data-warning" class="text-xs" style="display:none;color:var(--gold)">⚠️ API Limit (Delayed Data)</span>
-              <a href="#/live-cricket" class="btn btn-ghost btn-sm" style="font-size:12px">World →</a>
             </div>
           </div>
           <div id="nearby-list"><div class="text-muted text-sm">Loading matches…</div></div>
@@ -239,13 +238,11 @@ const DashboardPage = (() => {
       return 0;
     });
 
-    const topMatches = allMatches.slice(0, 8);
-
-    if (!topMatches.length) {
+    if (!allMatches.length) {
       list.innerHTML = `<div class="empty-state" style="padding:32px"><div class="empty-icon">🏟️</div><div class="empty-title">No matches found</div><div class="empty-desc">Live and upcoming matches will appear here.</div></div>`;
       return;
     }
-    list.innerHTML = `<div class="list-gap">` + topMatches.map(m => m.isExternal ? extMatchCard(m) : matchCard(m)).join('') + `</div>`;
+    list.innerHTML = `<div class="list-gap">` + allMatches.map(m => m.isExternal ? extMatchCard(m) : matchCard(m)).join('') + `</div>`;
   }
 
   function extMatchCard(m) {

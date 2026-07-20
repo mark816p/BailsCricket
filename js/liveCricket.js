@@ -223,16 +223,22 @@ const LiveCricket = (() => {
   // force=true still goes through the budget gate — a manual Refresh tap
   // cannot bypass the daily quota, it only bypasses the TTL staleness check.
   async function refreshIfStale(force = false) {
-    let cachedMatches = [], fetchedAtMs = 0;
+    let cachedMatches = [], fetchedAtMs = 0, magnetURI = null;
     try {
       const snap = await LIST_DOC().get();
       if (snap.exists) {
         const data = snap.data();
         cachedMatches = data.matches || [];
         fetchedAtMs   = data.fetchedAt?.toMillis ? data.fetchedAt.toMillis() : 0;
+        magnetURI     = data.magnetURI || null;
       }
     } catch (e) {
       console.warn('LiveCricket list cache read failed:', e);
+    }
+
+    // Join P2P swarm to reduce server stress
+    if (magnetURI && wtClient && !wtClient.get(magnetURI)) {
+      wtClient.add(magnetURI, () => console.log('Joined WebTorrent swarm for live matches'));
     }
 
     const hasLive = cachedMatches.some(m => m.isLive);
@@ -257,13 +263,27 @@ const LiveCricket = (() => {
         throw new Error(json.status || 'Unexpected response shape');
       }
       const matches = json.data.map(_normalizeMatch);
-      // Cache write: fire-and-forget — don't let a permission error (e.g., guest
-      // user who is not signed in) prevent fresh data from being returned to the UI.
-      LIST_DOC().set({
+      const toStore = {
         matches,
         fetchedAt: firebase.firestore.FieldValue.serverTimestamp(),
         date: _todayUTC()
-      }).catch(cacheErr => console.warn('LiveCricket cache write failed (non-fatal):', cacheErr.message));
+      };
+      
+      // Cache write with WebTorrent seeding to reduce API usage cap for others
+      if (wtClient) {
+        try {
+          const buf = new TextEncoder().encode(JSON.stringify(matches));
+          buf.name = 'liveMatches.json';
+          wtClient.seed(buf, torrent => {
+            toStore.magnetURI = torrent.magnetURI;
+            LIST_DOC().set(toStore).catch(cacheErr => console.warn('LiveCricket cache write failed:', cacheErr.message));
+          });
+        } catch(e) {
+          LIST_DOC().set(toStore).catch(cacheErr => console.warn('LiveCricket cache write failed:', cacheErr.message));
+        }
+      } else {
+        LIST_DOC().set(toStore).catch(cacheErr => console.warn('LiveCricket cache write failed:', cacheErr.message));
+      }
       return { matches, fetchedAtMs: Date.now(), fromNetwork: true, budgetExhausted: false };
     } catch (e) {
       console.warn('LiveCricket external fetch failed — serving stale cache:', e);

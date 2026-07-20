@@ -21,7 +21,7 @@ Router.register('/match/:id',         MatchDetailPage.render.bind(MatchDetailPag
 Router.register('/match/:id/score',   MatchScoringPage.render.bind(MatchScoringPage));
 Router.register('/player/:uid',       PlayerProfilePage.render.bind(PlayerProfilePage));
 Router.register('/team/:id',          TeamDetailPage.render.bind(TeamDetailPage));
-Router.register('/live-cricket',      LiveCricketPage.render.bind(LiveCricketPage));
+Router.register('/live-cricket',      () => Router.navigate('/dashboard'));
 Router.register('/live-cricket/:id',  LiveCricketPage.render.bind(LiveCricketPage));
 
 // ── AUTH STATE → NAV UPDATE ───────────────────────────────────────
