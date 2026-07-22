@@ -155,8 +155,8 @@ const DashboardPage = (() => {
           <div class="invite-card-info">
             <div class="invite-card-title">${icon} ${label} invitation</div>
             <div class="invite-card-sub">
-              ${inv.tournamentName ? `<strong>${inv.tournamentName}</strong>` : ''}
-              ${inv.fromName ? ` · from ${inv.fromName}` : ''}
+              ${inv.tournamentName ? `<strong>${Utils.escapeHtml(inv.tournamentName)}</strong>` : ''}
+              ${inv.fromName ? ` · from ${Utils.escapeHtml(inv.fromName)}` : ''}
             </div>
           </div>
           <div class="invite-actions">
@@ -331,18 +331,18 @@ const DashboardPage = (() => {
     return `<a href="#/match/${m.id}" class="card card-clickable match-card">
       <div class="match-card-teams">
         <div class="match-team-row">
-          <span class="match-team-name">${m.team1Name||'Team A'}</span>
+          <span class="match-team-name">${Utils.escapeHtml(m.team1Name||'Team A')}</span>
           <span class="match-team-score">${t1Score}${t1Ov}</span>
         </div>
         <div class="match-team-row">
-          <span class="match-team-name">${m.team2Name||'Team B'}</span>
+          <span class="match-team-name">${Utils.escapeHtml(m.team2Name||'Team B')}</span>
           <span class="match-team-score">${t2Score}${t2Ov}</span>
         </div>
       </div>
       <div class="match-meta">
         ${badge}
         ${meta ? `<span class="text-xs text-muted">${meta}</span>` : ''}
-        ${m.resultText ? `<span class="text-xs text-accent">${m.resultText}</span>` : ''}
+        ${m.resultText ? `<span class="text-xs text-accent">${Utils.escapeHtml(m.resultText)}</span>` : ''}
       </div>
     </a>`;
   }
