@@ -52,7 +52,7 @@ const TournamentDetailPage = (() => {
         <div class="tournament-hero-overlay">
           <div style="display:flex;align-items:flex-end;justify-content:space-between">
             <div>
-              <h1 class="tournament-hero-name" id="t-name">${tournament.name}</h1>
+              <h1 class="tournament-hero-name" id="t-name">${Utils.escapeHtml(tournament.name)}</h1>
               <div class="tournament-hero-meta">${matches.length} matches · ${teams.length} teams</div>
             </div>
             <div style="display:flex;gap:8px">
@@ -105,8 +105,8 @@ const TournamentDetailPage = (() => {
       const inn1=(m.innings||[])[0], inn2=(m.innings||[])[1];
       return `<a href="#/match/${m.id}" class="card card-clickable match-card">
         <div class="match-card-teams">
-          <div class="match-team-row"><span class="match-team-name">${m.team1Name}</span><span class="match-team-score">${inn1?inn1.runs+'/'+(inn1.wickets ?? 0):'—'}</span></div>
-          <div class="match-team-row"><span class="match-team-name">${m.team2Name}</span><span class="match-team-score">${inn2?inn2.runs+'/'+(inn2.wickets ?? 0):'—'}</span></div>
+          <div class="match-team-row"><span class="match-team-name">${Utils.escapeHtml(m.team1Name)}</span><span class="match-team-score">${inn1?inn1.runs+'/'+(inn1.wickets ?? 0):'—'}</span></div>
+          <div class="match-team-row"><span class="match-team-name">${Utils.escapeHtml(m.team2Name)}</span><span class="match-team-score">${inn2?inn2.runs+'/'+(inn2.wickets ?? 0):'—'}</span></div>
         </div>
         <div class="match-meta">${badge}<span class="text-xs text-muted">${m.format||''}${m.bracketRound?' · '+m.bracketRound:''}</span></div>
       </a>`;
@@ -120,10 +120,10 @@ const TournamentDetailPage = (() => {
       return `<a href="#/team/${t.id}" class="team-card card card-clickable">
         <div class="team-logo">
           ${t.picture
-            ? `<img src="${t.picture}" alt="${t.name}" style="width:100%;height:100%;object-fit:cover"/>`
+            ? `<img src="${t.picture}" alt="${Utils.escapeHtml(t.name)}" style="width:100%;height:100%;object-fit:cover"/>`
             : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">👕</div>`}
         </div>
-        <div class="team-info"><div class="team-name">${t.name}</div><div class="team-sub">${playerCount} player${playerCount!==1?'s':''}</div></div>
+        <div class="team-info"><div class="team-name">${Utils.escapeHtml(t.name)}</div><div class="team-sub">${playerCount} player${playerCount!==1?'s':''}</div></div>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </a>`;
     }).join('') + `</div>`;
@@ -137,7 +137,7 @@ const TournamentDetailPage = (() => {
     </tr></thead><tbody>
     ${table.map((row,i) => `<tr>
       <td>${i+1}</td>
-      <td><span class="qual-dot ${i<2?'qualified':'eliminated'}"></span>${row.teamName}</td>
+      <td><span class="qual-dot ${i<2?'qualified':'eliminated'}"></span>${Utils.escapeHtml(row.teamName)}</td>
       <td>${row.played}</td><td>${row.won}</td><td>${row.lost}</td><td>${row.tied}</td><td>${row.nr}</td>
       <td><strong>${row.points}</strong></td>
       <td style="color:${row.nrr>=0?'var(--accent)':'var(--red)'}">${row.nrr>=0?'+':''}${row.nrr.toFixed(3)}</td>
