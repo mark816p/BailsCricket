@@ -47,14 +47,18 @@ const LiveCricketPage = (() => {
   async function render(path, parts, params) {
     _detailId = params && params.id ? params.id : null;
     Utils.render(`<div class="page-loading"><div class="page-loading-spinner"></div><div>Loading live scores…</div></div>`);
-    const result = await LiveCricket.refreshIfStale(false);
-    _matches = result.matches || [];
-    _fetchedAtMs = result.fetchedAtMs || 0;
-    if (result.budgetExhausted) {
-      Utils.toast('Showing the last known scores — a fresh check will happen soon.', 'info');
+    try {
+      const result = await LiveCricket.refreshIfStale(false);
+      _matches = result.matches || [];
+      _fetchedAtMs = result.fetchedAtMs || 0;
+      if (result.budgetExhausted) {
+        Utils.toast('Showing the last known scores — a fresh check will happen soon.', 'info');
+      }
+      if (_detailId) { await loadAndRenderDetail(); } else { renderList(); }
+      startPolling();
+    } catch (e) {
+      Utils.render(`<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-title">Could not load live scores</div><div class="empty-desc">Check your network connection and try again.</div></div>`);
     }
-    if (_detailId) { await loadAndRenderDetail(); } else { renderList(); }
-    startPolling();
   }
 
   function _agoLabel() {
