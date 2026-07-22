@@ -75,6 +75,13 @@ auth.onAuthStateChanged(user => {
       Router.init();  // registers listener + immediately dispatches current path
     }
   }
+}, err => {
+  console.warn('Auth state change error, booting guest mode:', err);
+  if (!booted) {
+    booted = true;
+    hideLoader();
+    Router.init();
+  }
 });
 
 // If auth takes too long (offline), fall through after 3s
