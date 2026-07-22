@@ -50,16 +50,16 @@ const TeamDetailPage = (() => {
     Utils.render(`
       <a href="${backHref}" class="back-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-        ${backLabel}
+        ${Utils.escapeHtml(backLabel)}
       </a>
 
       <div class="team-detail-header">
         <div class="team-logo-lg">
-          ${team.picture ? `<img src="${team.picture}" alt="${team.name}"/>` : '👕'}
+          ${team.picture ? `<img src="${team.picture}" alt="${Utils.escapeHtml(team.name)}"/>` : '👕'}
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:22px;font-weight:900;letter-spacing:-.4px">${team.name}</div>
-          ${tournament ? `<div class="text-sm text-muted" style="margin-top:3px">${tournament.name}</div>` : ''}
+          <div style="font-size:22px;font-weight:900;letter-spacing:-.4px">${Utils.escapeHtml(team.name)}</div>
+          ${tournament ? `<div class="text-sm text-muted" style="margin-top:3px">${Utils.escapeHtml(tournament.name)}</div>` : ''}
           <div class="text-sm text-muted" style="margin-top:2px">${players.length} player${players.length!==1?'s':''}</div>
         </div>
         ${isAdmin ? `<button class="btn btn-outline btn-sm" onclick="TeamDetailPage.editTeam()">⚙ Edit</button>` : ''}
@@ -95,10 +95,10 @@ const TeamDetailPage = (() => {
         <img src="${pic}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0"/>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:15px">
-            ${p.name || p.uid}
+            ${Utils.escapeHtml(p.name || p.uid)}
             ${p.isGuest ? ' <span class="badge" style="font-size:10px;background:var(--surface2);color:var(--subtext);padding:2px 6px;border-radius:4px">Guest</span>' : ''}
           </div>
-          ${p.username ? `<div class="text-xs text-muted">@${p.username}</div>` : ''}
+          ${p.username ? `<div class="text-xs text-muted">@${Utils.escapeHtml(p.username)}</div>` : ''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
           <span class="player-role-badge ${roleClass}">${role}</span>
