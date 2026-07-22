@@ -195,8 +195,8 @@ const Utils = (() => {
   const WICKET_TYPES  = ['Bowled','Caught Behind','Stumping','Run Out','LBW','Caught Out','Retired Hurt','Retired Out'];
   const FORMATS       = { 'T5':5,'T10':10,'T20':20,'ODI':50,'2-Day':90,'3-Day':120,'Test':180,'Custom':null };
   const PLAYER_ROLES  = ['Batsman','Bowler','All-rounder','Wicket-keeper','Captain'];
-  // Bump APP_VERSION AND service-worker.js CACHE_NAME = 'bails-v27-spark'; on every deploy
-  const APP_VERSION   = 'v27';
+  // Bump APP_VERSION AND service-worker.js CACHE_NAME = 'bails-v28-spark'; on every deploy
+  const APP_VERSION   = 'v28';
 
   return {
     toast, modal, closeModal,
