@@ -6,12 +6,16 @@ const TournamentDetailPage = (() => {
     tournamentId = params.id;
     Utils.setActivePage('tournaments');
     Utils.render(`<div class="text-muted text-sm" style="padding:40px;text-align:center">Loading…</div>`);
-    await Auth.whenReady(); // avoid wrongly hiding host controls on a slow connection
-    const snap = await db.collection('tournaments').doc(tournamentId).get();
-    if (!snap.exists) { Utils.render('<p class="text-muted" style="padding:40px">Tournament not found.</p>'); return; }
-    tournament = { id: snap.id, ...snap.data() };
-    await fetchData();
-    renderLayout();
+    try {
+      await Auth.whenReady(); // avoid wrongly hiding host controls on a slow connection
+      const snap = await db.collection('tournaments').doc(tournamentId).get();
+      if (!snap.exists) { Utils.render('<p class="text-muted" style="padding:40px">Tournament not found.</p>'); return; }
+      tournament = { id: snap.id, ...snap.data() };
+      await fetchData();
+      renderLayout();
+    } catch (e) {
+      Utils.render('<p class="text-muted" style="padding:40px;text-align:center">Error loading tournament details.</p>');
+    }
   }
 
   async function fetchData() {
