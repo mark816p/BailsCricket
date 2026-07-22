@@ -35,7 +35,7 @@ const DashboardPage = (() => {
         <div class="dash-welcome-left">
           ${pic ? `<img src="${pic}" class="dash-avatar"/>` : `<div class="dash-avatar dash-avatar-placeholder">🏏</div>`}
           <div>
-            <div class="dash-greeting">${greeting}${name ? ', ' + name.split(' ')[0] : ''}!</div>
+            <div class="dash-greeting">${greeting}${name ? ', ' + Utils.escapeHtml(name.split(' ')[0]) : ''}!</div>
             <div class="dash-subtitle">Here's what's happening in cricket</div>
           </div>
         </div>
