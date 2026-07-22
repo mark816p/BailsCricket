@@ -3,7 +3,7 @@ const LegalPage = (() => {
   function renderPrivacy() {
     Utils.render(`
       <div class="legal-page">
-        <a href="#/" class="btn btn-ghost btn-sm" style="margin-bottom:16px;padding-left:0">← Back</a>
+        <a href="#/" onclick="Router.back(); return false;" class="btn btn-ghost btn-sm" style="margin-bottom:16px;padding-left:0">← Back</a>
         <h1>Privacy Policy</h1>
         <div class="last-updated">Last updated: January 1, 2025</div>
         <h2>1. Introduction</h2>
@@ -77,7 +77,7 @@ const LegalPage = (() => {
   function renderTerms() {
     Utils.render(`
       <div class="legal-page">
-        <a href="#/" class="btn btn-ghost btn-sm" style="margin-bottom:16px;padding-left:0">← Back</a>
+        <a href="#/" onclick="Router.back(); return false;" class="btn btn-ghost btn-sm" style="margin-bottom:16px;padding-left:0">← Back</a>
         <h1>Terms of Service</h1>
         <div class="last-updated">Last updated: January 1, 2025</div>
         <h2>1. Acceptance of Terms</h2>
