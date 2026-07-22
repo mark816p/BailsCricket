@@ -412,7 +412,7 @@ const SearchPage = (() => {
   }
 
   function noResults(q) {
-    return `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No results for "${q}"</div></div>`;
+    return `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No results for "${Utils.escapeHtml(q)}"</div></div>`;
   }
 
   return { render, setType, _teamAutocomplete, _pickTeam, _dateChange, _runMatchSearch };
