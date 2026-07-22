@@ -155,7 +155,9 @@ const Auth = (() => {
   function startGuestPrompt() {
     let dismissed = false;
     const prompt = document.getElementById('login-prompt');
-    document.getElementById('dismiss-login-prompt').onclick = () => {
+    const dismissBtn = document.getElementById('dismiss-login-prompt');
+    if (!prompt || !dismissBtn) return;
+    dismissBtn.onclick = () => {
       dismissed = true; prompt.classList.add('hidden');
       setTimeout(() => { dismissed = false; }, 5 * 60 * 1000);
     };
