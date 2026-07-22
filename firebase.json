@@ -3,7 +3,7 @@
     {
       "target": "main",
       "public": ".",
-      "ignore": ["firebase.json", ".firebaserc", "firestore.rules", "firestore.indexes.json", "**/.*", "**/node_modules/**"],
+      "ignore": ["firebase.json", ".firebaserc", "firestore.rules", "firestore.indexes.json", "**/.*", "**/node_modules/**", "**/qa/**"],
       "rewrites": [{ "source": "**", "destination": "/index.html" }],
       "headers": [
         { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }] },
@@ -13,7 +13,7 @@
     {
       "target": "bailscricket",
       "public": ".",
-      "ignore": ["firebase.json", ".firebaserc", "firestore.rules", "firestore.indexes.json", "**/.*", "**/node_modules/**"],
+      "ignore": ["firebase.json", ".firebaserc", "firestore.rules", "firestore.indexes.json", "**/.*", "**/node_modules/**", "**/qa/**"],
       "rewrites": [{ "source": "**", "destination": "/index.html" }],
       "headers": [
         { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }] },
@@ -23,7 +23,7 @@
     {
       "target": "bails-scorer",
       "public": ".",
-      "ignore": ["firebase.json", ".firebaserc", "firestore.rules", "firestore.indexes.json", "**/.*", "**/node_modules/**"],
+      "ignore": ["firebase.json", ".firebaserc", "firestore.rules", "firestore.indexes.json", "**/.*", "**/node_modules/**", "**/qa/**"],
       "rewrites": [{ "source": "**", "destination": "/index.html" }],
       "headers": [
         { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }] },
