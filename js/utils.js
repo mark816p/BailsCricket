@@ -114,6 +114,16 @@ const Utils = (() => {
     document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === page));
   }
 
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   // ── Misc ───────────────────────────────────────────────────────────────────
   function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
   async function getIPLocation() {
@@ -202,7 +212,7 @@ const Utils = (() => {
     toast, modal, closeModal,
     confirmModal, _resolveConfirmModal,
     compressImage, compressToBase64,
-    initialsAvatar, formatOvers, fmtDate, getIPLocation,
+    initialsAvatar, formatOvers, fmtDate, getIPLocation, escapeHtml,
     render, setActivePage, uid, rr,
     exportScorecard, showQR,
     calcDLSTarget, getDLSResource,

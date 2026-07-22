@@ -119,8 +119,8 @@ const SearchPage = (() => {
       html += `<a href="#/player/${u.uid||u.id}" class="card card-clickable card-body" style="display:flex;align-items:center;gap:14px">
         <img src="${pic}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0"/>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:15px">${u.displayName||''}</div>
-          <div class="text-xs text-muted">@${u.username||''} · <span style="color:var(--accent);font-weight:600">Bails</span></div>
+          <div style="font-weight:600;font-size:15px">${Utils.escapeHtml(u.displayName || u.username || 'User')} <span class="ext-gender-tag" style="background:var(--accent);color:#000;margin-left:6px">Bails User</span></div>
+          <div class="text-xs text-muted">@${Utils.escapeHtml(u.username||'')} ${u.battingStyle?`· ${Utils.escapeHtml(u.battingStyle)}`:''}</div>
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </a>`;
