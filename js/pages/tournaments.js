@@ -73,16 +73,22 @@ const TournamentsPage = (() => {
   async function createNew() {
     if (_creating) return;
     _creating = true;
-    const user = Auth.getUser();
-    const ref  = db.collection('tournaments').doc();
-    await ref.set({
-      id: ref.id, name: 'Untitled Tournament', nameLower: 'untitled tournament',
-      ownerId: user.uid, coHosts: [], umpires: [], teams: [], matchCount: 0,
-      format: 'league', rounds: [],
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    Router.navigate(`/tournament/${ref.id}`);
-    _creating = false;
+    try {
+      const user = Auth.getUser();
+      if (!user) { Utils.toast('Please sign in to create a tournament', 'error'); return; }
+      const ref = db.collection('tournaments').doc();
+      await ref.set({
+        id: ref.id, name: 'Untitled Tournament', nameLower: 'untitled tournament',
+        ownerId: user.uid, coHosts: [], umpires: [], teams: [], matchCount: 0,
+        format: 'league', rounds: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      Router.navigate(`/tournament/${ref.id}`);
+    } catch (e) {
+      Utils.toast('Failed to create tournament: ' + (e.message || e), 'error');
+    } finally {
+      _creating = false;
+    }
   }
 
   return { render, createNew };
