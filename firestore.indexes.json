@@ -13,6 +13,15 @@
       "collectionGroup": "matches",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "participants", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "status",       "order": "ASCENDING" },
+        { "fieldPath": "scheduledAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "matches",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "tournamentId", "order": "ASCENDING" },
         { "fieldPath": "scheduledAt",  "order": "ASCENDING" }
       ]
