@@ -144,16 +144,16 @@ const LiveCricketPage = (() => {
                 : `<span class="match-badge badge-upcoming">UPCOMING</span>`;
     const genderTag = m.gender === 'women' ? `<span class="ext-gender-tag">Women's</span>` : '';
     // Defensive helpers — prevent [object Object] if any field is an unexpected type
-    const str   = v => (v != null ? String(v) : '');
+    const str = v => (v != null ? Utils.escapeHtml(String(v)) : '');
     // safeStr: handles the edge case where a name field is itself a nested object
     const safeStr = v => {
       if (v == null) return '';
-      if (typeof v === 'string') return v;
+      if (typeof v === 'string') return Utils.escapeHtml(v);
       if (typeof v === 'object' && !Array.isArray(v)) {
         const best = v.name || v.full || v.long || v.value || v.text || v.short || Object.values(v)[0];
-        return best != null ? String(best) : '[?]';
+        return best != null ? Utils.escapeHtml(String(best)) : '[?]';
       }
-      return String(v);
+      return Utils.escapeHtml(String(v));
     };
     const score = (s, o) => s ? str(s) + (o != null ? ` (${str(o)})` : '') : '\u2014';
     const t1 = m.team1 && typeof m.team1 === 'object' ? m.team1 : { name: String(m.team1 || 'Team 1'), score: null, overs: null };
