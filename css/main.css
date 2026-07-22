@@ -987,8 +987,12 @@ select option { background: var(--surface2); }
 .ext-detail-team-name { font-weight: 700; font-size: 15px; }
 .ext-detail-score { font-size: 20px; font-weight: 800; color: var(--accent); margin-top: 2px; }
 
-/* ── SCROLLBAR on firefox ───────────────────────────────────────── */
+/* ── SCROLLBAR ─────────────────────────────────────────────────── */
 * { scrollbar-width: thin; scrollbar-color: var(--surface3) transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 /* ── MOBILE SAFARI SAFE AREA ────────────────────────────────────── */
 @supports(padding-bottom: env(safe-area-inset-bottom)){
