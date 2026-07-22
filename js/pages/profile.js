@@ -34,8 +34,8 @@ const ProfilePage = (() => {
           <img src="${pic}" alt="Profile" id="profile-pic-img"/>
         </div>
         <div class="profile-info">
-          <div class="profile-name">${profile?.displayName||'User'}</div>
-          <div class="profile-username">@${profile?.username||''}</div>
+          <div class="profile-name">${Utils.escapeHtml(profile?.displayName||'User')}</div>
+          <div class="profile-username">@${Utils.escapeHtml(profile?.username||'')}</div>
           <div class="text-xs text-muted" style="margin-top:4px">Tap photo to change</div>
         </div>
         <button class="btn btn-sm btn-outline" onclick="ProfilePage.editDisplayName()">Edit Name</button>
