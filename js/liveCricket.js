@@ -50,7 +50,7 @@ const LiveCricket = (() => {
   // Firestore doc IDs can't contain '/', and have a length ceiling — sanitize
   // any external match id before using it as a doc key.
   function _safeDocId(id) {
-    return String(id).replace(/[/\s]+/g, '_').slice(0, 300) || 'unknown';
+    return String(id).replace(/[/\s]+/g, '_').replace(/\+/g, '-').replace(/=/g, '').slice(0, 300) || 'unknown';
   }
 
   // ── QUOTA GATE ──────────────────────────────────────────────────────────
