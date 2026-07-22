@@ -4,10 +4,12 @@ const Utils = (() => {
   // ── Toast ──────────────────────────────────────────────────────────────────
   function toast(msg, type = 'info', duration = 3500) {
     const icons = { success: '✓', error: '✕', info: 'ℹ' };
+    const container = document.getElementById('toast-container');
+    if (!container) return;
     const el = document.createElement('div');
     el.className = `toast ${type}`;
-    el.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${msg}</span>`;
-    document.getElementById('toast-container').appendChild(el);
+    el.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${escapeHtml(String(msg || ''))}</span>`;
+    container.appendChild(el);
     setTimeout(() => el.remove(), duration);
   }
 
