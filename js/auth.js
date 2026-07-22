@@ -26,9 +26,14 @@ const Auth = (() => {
   }
 
   async function loadProfile(uid) {
-    const snap = await db.collection('users').doc(uid).get();
-    if (snap.exists) { userProfile = snap.data(); return true; }
-    return false;
+    try {
+      const snap = await db.collection('users').doc(uid).get();
+      if (snap.exists) { userProfile = snap.data(); return true; }
+      return false;
+    } catch (e) {
+      console.warn('loadProfile error:', e);
+      return false;
+    }
   }
 
   async function signIn(provider) {
