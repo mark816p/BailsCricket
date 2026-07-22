@@ -690,7 +690,7 @@ if (!jsdomAvailable) {
       ok('E — UI test harness — no fatal error', false, e.message + '\n' + e.stack);
       printResults();
     });
-    return; // printResults called from async chain
+    // printResults called from async chain
   } catch (loadErr) {
     ok('E — page JS load — no crash', false, loadErr.message);
   }
