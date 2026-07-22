@@ -61,7 +61,7 @@ const TournamentsPage = (() => {
           ${t.picture ? `<img src="${t.picture}" style="width:100%;height:100%;object-fit:cover"/>` : '🏆'}
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:15px">${t.name}</div>
+          <div style="font-weight:700;font-size:15px">${Utils.escapeHtml(t.name)}</div>
           <div class="text-sm text-muted">${t.matchCount||0} matches · ${teamCounts[i]} team${teamCounts[i]!==1?'s':''}</div>
         </div>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
