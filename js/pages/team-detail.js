@@ -7,39 +7,43 @@ const TeamDetailPage = (() => {
     Utils.setActivePage('tournaments');
     Utils.render(`<div class="text-muted text-sm" style="padding:40px;text-align:center">Loading team…</div>`);
 
-    await Auth.whenReady();
+    try {
+      await Auth.whenReady();
 
-    const snap = await db.collection('teams').doc(teamId).get();
-    if (!snap.exists) { Utils.render('<p class="text-muted" style="padding:40px">Team not found.</p>'); return; }
-    team = { id: snap.id, ...snap.data() };
+      const snap = await db.collection('teams').doc(teamId).get();
+      if (!snap.exists) { Utils.render('<p class="text-muted" style="padding:40px">Team not found.</p>'); return; }
+      team = { id: snap.id, ...snap.data() };
 
-    tournament = null;
-    if (team.tournamentId) {
-      const tSnap = await db.collection('tournaments').doc(team.tournamentId).get();
-      if (tSnap.exists) tournament = { id: tSnap.id, ...tSnap.data() };
+      tournament = null;
+      if (team.tournamentId) {
+        const tSnap = await db.collection('tournaments').doc(team.tournamentId).get();
+        if (tSnap.exists) tournament = { id: tSnap.id, ...tSnap.data() };
+      }
+
+      const user = Auth.getUser();
+      isAdmin = user && tournament && Auth.isHost(tournament);
+
+      // ── Bug #8 fix: resolve real displayNames for non-guest players whose
+      // stored name is missing or looks like a raw Firebase UID (old data).
+      const players = Object.entries(team.players || {}).map(([uid, p]) => ({ uid, ...p }));
+      const needsName = players.filter(p => !p.isGuest && (!p.name || p.name === p.uid));
+      if (needsName.length) {
+        await Promise.all(needsName.map(async p => {
+          try {
+            const s = await db.collection('users').doc(p.uid).get();
+            if (s.exists && s.data().displayName) {
+              // Update in-memory only — avoids unwanted Firestore writes on every page load
+              p.name = s.data().displayName;
+              if (team.players[p.uid]) team.players[p.uid].name = p.name;
+            }
+          } catch(_) {}
+        }));
+      }
+
+      renderLayout();
+    } catch (e) {
+      Utils.render('<p class="text-muted" style="padding:40px;text-align:center">Error loading team details.</p>');
     }
-
-    const user = Auth.getUser();
-    isAdmin = user && tournament && Auth.isHost(tournament);
-
-    // ── Bug #8 fix: resolve real displayNames for non-guest players whose
-    // stored name is missing or looks like a raw Firebase UID (old data).
-    const players = Object.entries(team.players || {}).map(([uid, p]) => ({ uid, ...p }));
-    const needsName = players.filter(p => !p.isGuest && (!p.name || p.name === p.uid));
-    if (needsName.length) {
-      await Promise.all(needsName.map(async p => {
-        try {
-          const s = await db.collection('users').doc(p.uid).get();
-          if (s.exists && s.data().displayName) {
-            // Update in-memory only — avoids unwanted Firestore writes on every page load
-            p.name = s.data().displayName;
-            if (team.players[p.uid]) team.players[p.uid].name = p.name;
-          }
-        } catch(_) {}
-      }));
-    }
-
-    renderLayout();
   }
 
   function renderLayout() {
