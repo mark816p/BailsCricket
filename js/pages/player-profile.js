@@ -44,11 +44,11 @@ const PlayerProfilePage = (() => {
     Utils.render(`
       <a href="#/search" class="btn btn-ghost btn-sm" style="margin-bottom:12px;padding-left:0">← Back</a>
       <div class="profile-hero">
-        <div class="avatar xl"><img src="${pic}" alt="${profile.displayName}"/></div>
+        <div class="avatar xl"><img src="${pic}" alt="${Utils.escapeHtml(profile.displayName)}"/></div>
         <div class="profile-info">
-          <div class="profile-name">${profile.displayName}</div>
-          <div class="profile-username">@${profile.username}</div>
-          ${styleStr?`<div class="text-xs text-muted" style="margin-top:4px">${styleStr}</div>`:''}
+          <div class="profile-name">${Utils.escapeHtml(profile.displayName)}</div>
+          <div class="profile-username">@${Utils.escapeHtml(profile.username)}</div>
+          ${styleStr?`<div class="text-xs text-muted" style="margin-top:4px">${Utils.escapeHtml(styleStr)}</div>`:''}
         </div>
       </div>
 
