@@ -235,7 +235,9 @@ const DashboardPage = (() => {
       const bLive = b.isExternal ? b.isLive : (b.status === 'live');
       if (aLive && !bLive) return -1;
       if (!aLive && bLive) return 1;
-      return 0;
+      const aTime = a.scheduledAt || 0;
+      const bTime = b.scheduledAt || 0;
+      return bTime > aTime ? 1 : (bTime < aTime ? -1 : 0);
     });
 
     if (!allMatches.length) {
