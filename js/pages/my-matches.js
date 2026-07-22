@@ -40,11 +40,11 @@ const MyMatchesPage = (() => {
       const inn1=(m.innings||[])[0], inn2=(m.innings||[])[1];
       return `<a href="#/match/${m.id}" class="card card-clickable match-card" style="margin-bottom:8px">
         <div class="match-card-teams">
-          <div class="match-team-row"><span class="match-team-name">${m.team1Name}</span><span class="match-team-score">${inn1 ? inn1.runs+'/'+( inn1.wickets ?? 0) : '—'}</span></div>
-          <div class="match-team-row"><span class="match-team-name">${m.team2Name}</span><span class="match-team-score">${inn2 ? inn2.runs+'/'+( inn2.wickets ?? 0) : '—'}</span></div>
+          <div class="match-team-row"><span class="match-team-name">${Utils.escapeHtml(m.team1Name)}</span><span class="match-team-score">${inn1 ? inn1.runs+'/'+( inn1.wickets ?? 0) : '—'}</span></div>
+          <div class="match-team-row"><span class="match-team-name">${Utils.escapeHtml(m.team2Name)}</span><span class="match-team-score">${inn2 ? inn2.runs+'/'+( inn2.wickets ?? 0) : '—'}</span></div>
         </div>
         <div class="match-meta">${badge}<span class="text-xs text-muted">${m.format||''} · ${Utils.fmtDate(m.scheduledAt)}</span></div>
-        ${m.resultText?`<div class="text-sm text-accent" style="margin-top:6px">${m.resultText}</div>`:''}
+        ${m.resultText?`<div class="text-sm text-accent" style="margin-top:6px">${Utils.escapeHtml(m.resultText)}</div>`:''}
       </a>`;
     }).join('');
   }
