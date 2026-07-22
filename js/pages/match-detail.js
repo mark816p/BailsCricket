@@ -79,8 +79,8 @@ const MatchDetailPage = (() => {
           </div>
         </div>
         ${renderLiveScore()}
-        ${match.resultText ? `<div class="result-text">${match.resultText}</div>` : ''}
-        ${match.toss ? `<div class="text-xs text-muted" style="margin-top:6px">${match.toss}</div>` : ''}
+        ${match.resultText ? `<div class="result-text">${Utils.escapeHtml(match.resultText)}</div>` : ''}
+        ${match.toss ? `<div class="text-xs text-muted" style="margin-top:6px">${Utils.escapeHtml(match.toss)}</div>` : ''}
       </div>
 
       <div class="tabs" id="md-tabs">
@@ -99,17 +99,17 @@ const MatchDetailPage = (() => {
   function renderLiveScore() {
     const inn1 = (match.innings||[])[0];
     const inn2 = (match.innings||[])[1];
-    if (!inn1) return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><div style="font-size:22px;font-weight:800">${match.team1Name}</div><div style="font-size:22px;font-weight:800">${match.team2Name}</div></div>`;
+    if (!inn1) return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><div style="font-size:22px;font-weight:800">${Utils.escapeHtml(match.team1Name)}</div><div style="font-size:22px;font-weight:800">${Utils.escapeHtml(match.team2Name)}</div></div>`;
     const activeInn = inn2 || inn1;
     return `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
         <div>
-          <div style="font-size:14px;color:var(--subtext);margin-bottom:2px">${activeInn.battingTeamName}</div>
+          <div style="font-size:14px;color:var(--subtext);margin-bottom:2px">${Utils.escapeHtml(activeInn.battingTeamName)}</div>
           <div style="font-size:28px;font-weight:900;color:var(--accent)">${activeInn.runs}/${activeInn.wickets ?? 0}</div>
           <div style="font-size:12px;color:var(--muted)">${Utils.formatOvers(activeInn.balls)} ov · RR ${Utils.rr(activeInn.runs, activeInn.balls)}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:14px;color:var(--subtext);margin-bottom:2px">${activeInn.bowlingTeamName}</div>
+          <div style="font-size:14px;color:var(--subtext);margin-bottom:2px">${Utils.escapeHtml(activeInn.bowlingTeamName)}</div>
           ${inn2 && inn1 ? `<div style="font-size:16px;font-weight:700;color:var(--subtext)">${inn1.runs}/${inn1.wickets ?? 0} (${Utils.formatOvers(inn1.balls)})</div>` : '<div class="text-muted text-sm">Yet to bat</div>'}
           ${inn2 ? `<div style="font-size:12px;color:var(--accent)">Target: ${inn1.runs+1} · Need: ${Math.max(0,inn1.runs+1-inn2.runs)} off ${Math.max(0,(match.overs||20)*6-inn2.balls)}b</div>` : ''}
         </div>
