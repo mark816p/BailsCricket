@@ -85,7 +85,10 @@ const Router = (() => {
       if (pParts.length !== parts.length) continue;
       const params = {}; let match = true;
       for (let i = 0; i < pParts.length; i++) {
-        if (pParts[i].startsWith(':')) { params[pParts[i].slice(1)] = decodeURIComponent(parts[i]); }
+        if (pParts[i].startsWith(':')) {
+          try { params[pParts[i].slice(1)] = decodeURIComponent(parts[i]); }
+          catch (_) { params[pParts[i].slice(1)] = parts[i]; }
+        }
         else if (pParts[i] !== parts[i]) { match = false; break; }
       }
       if (match) return (path, p) => handler(path, p, params);
