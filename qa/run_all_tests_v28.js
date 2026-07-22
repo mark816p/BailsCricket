@@ -685,6 +685,15 @@ if (!jsdomAvailable) {
       }
     }
 
+    // ── SECTION G: Security & XSS Sanitization ──
+    if (typeof Utils !== 'undefined' && Utils.escapeHtml) {
+      ok('G1 Utils.escapeHtml encodes <script>', Utils.escapeHtml('<script>alert(1)</script>') === '&lt;script&gt;alert(1)&lt;/script&gt;');
+      ok('G2 Utils.escapeHtml encodes quotes', Utils.escapeHtml('"hello" & \'world\'') === '&quot;hello&quot; &amp; &#039;world&#039;');
+      ok('G3 Utils.escapeHtml handles null/empty', Utils.escapeHtml(null) === '' && Utils.escapeHtml('') === '');
+    } else {
+      ok('G1 Utils.escapeHtml exists', false, 'Utils.escapeHtml missing');
+    }
+
     // Run async tests then print results
     runUITests().then(printResults).catch(e => {
       ok('E — UI test harness — no fatal error', false, e.message + '\n' + e.stack);
