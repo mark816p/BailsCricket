@@ -95,46 +95,50 @@ const ProfilePage = (() => {
   async function loadCareerStats(uid) {
     const section = document.getElementById('career-stats-section');
     if (!section) return;
-    const snap = await db.collection('matches')
-      .where('participants','array-contains',uid)
-      .where('status','==','completed').limit(50).get();
-    const matchList = snap.docs.map(d => d.data());
-    let totalRuns=0,totalBalls=0,totalWickets=0,totalBowlBalls=0,totalBowlRuns=0;
-    let innings=0,fifties=0,hundreds=0,fours=0,sixes=0,highScore=0;
+    try {
+      const snap = await db.collection('matches')
+        .where('participants','array-contains',uid)
+        .where('status','==','completed').limit(50).get();
+      const matchList = snap.docs.map(d => d.data());
+      let totalRuns=0,totalBalls=0,totalWickets=0,totalBowlBalls=0,totalBowlRuns=0;
+      let innings=0,fifties=0,hundreds=0,fours=0,sixes=0,highScore=0;
 
-    matchList.forEach(m => {
-      (m.innings||[]).forEach(inn => {
-        const bat = (inn.batters||{})[uid];
-        if (bat && bat.balls>0) {
-          innings++; totalRuns+=bat.runs||0; totalBalls+=bat.balls||0;
-          fours+=bat.fours||0; sixes+=bat.sixes||0;
-          if((bat.runs||0)>highScore) highScore=bat.runs;
-          if((bat.runs||0)>=100) hundreds++; else if((bat.runs||0)>=50) fifties++;
-        }
-        const bowl = (inn.bowlers||{})[uid];
-        if (bowl && bowl.balls>0) { totalWickets+=bowl.wickets||0; totalBowlBalls+=bowl.balls||0; totalBowlRuns+=bowl.runs||0; }
+      matchList.forEach(m => {
+        (m.innings||[]).forEach(inn => {
+          const bat = (inn.batters||{})[uid];
+          if (bat && bat.balls>0) {
+            innings++; totalRuns+=bat.runs||0; totalBalls+=bat.balls||0;
+            fours+=bat.fours||0; sixes+=bat.sixes||0;
+            if((bat.runs||0)>highScore) highScore=bat.runs;
+            if((bat.runs||0)>=100) hundreds++; else if((bat.runs||0)>=50) fifties++;
+          }
+          const bowl = (inn.bowlers||{})[uid];
+          if (bowl && bowl.balls>0) { totalWickets+=bowl.wickets||0; totalBowlBalls+=bowl.balls||0; totalBowlRuns+=bowl.runs||0; }
+        });
       });
-    });
 
-    const avg  = innings ? (totalRuns/innings).toFixed(1) : '—';
-    const sr   = totalBalls ? ((totalRuns/totalBalls)*100).toFixed(1) : '—';
-    const econ = totalBowlBalls ? ((totalBowlRuns/(totalBowlBalls/6))).toFixed(2) : '—';
+      const avg  = innings ? (totalRuns/innings).toFixed(1) : '—';
+      const sr   = totalBalls ? ((totalRuns/totalBalls)*100).toFixed(1) : '—';
+      const econ = totalBowlBalls ? ((totalBowlRuns/(totalBowlBalls/6))).toFixed(2) : '—';
 
-    section.innerHTML = `
-      <div class="settings-section-title">My Career Stats</div>
-      <div class="text-xs text-muted" style="margin-bottom:10px">Based on ${matchList.length} completed matches</div>
-      <div class="stat-grid">
-        <div class="stat-tile"><div class="stat-tile-val">${totalRuns}</div><div class="stat-tile-label">Runs</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${avg}</div><div class="stat-tile-label">Avg</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${sr}</div><div class="stat-tile-label">Strike Rate</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${highScore}</div><div class="stat-tile-label">High Score</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${hundreds}</div><div class="stat-tile-label">100s</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${fifties}</div><div class="stat-tile-label">50s</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${fours}</div><div class="stat-tile-label">4s</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${sixes}</div><div class="stat-tile-label">6s</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${totalWickets}</div><div class="stat-tile-label">Wickets</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${econ}</div><div class="stat-tile-label">Economy</div></div>
-      </div>`;
+      section.innerHTML = `
+        <div class="settings-section-title">My Career Stats</div>
+        <div class="text-xs text-muted" style="margin-bottom:10px">Based on ${matchList.length} completed matches</div>
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="stat-tile-val">${totalRuns}</div><div class="stat-tile-label">Runs</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${avg}</div><div class="stat-tile-label">Avg</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${sr}</div><div class="stat-tile-label">Strike Rate</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${highScore}</div><div class="stat-tile-label">High Score</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${hundreds}</div><div class="stat-tile-label">100s</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${fifties}</div><div class="stat-tile-label">50s</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${fours}</div><div class="stat-tile-label">4s</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${sixes}</div><div class="stat-tile-label">6s</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${totalWickets}</div><div class="stat-tile-label">Wickets</div></div>
+          <div class="stat-tile"><div class="stat-tile-val">${econ}</div><div class="stat-tile-label">Economy</div></div>
+        </div>`;
+    } catch (e) {
+      section.innerHTML = `<div class="settings-section-title">My Career Stats</div><div class="text-xs text-muted">Unable to load career statistics right now.</div>`;
+    }
   }
 
   async function setStat(field, value) {
