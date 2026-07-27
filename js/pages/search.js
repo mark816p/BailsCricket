@@ -378,7 +378,12 @@ const SearchPage = (() => {
       if (_matchDateFrom) params.set('from', _matchDateFrom);
       if (_matchDateTo)   params.set('to',   _matchDateTo);
       const r = await fetch(`${EXT_API}/searchMatches?${params}`);
-      if (r.ok) { const j = await r.json(); extMatches = j.data || []; }
+      if (r.ok) {
+        const j = await r.json();
+        extMatches = typeof LiveCricket !== 'undefined' && LiveCricket.sortMatchesByPopularity
+          ? LiveCricket.sortMatchesByPopularity(j.data || [])
+          : (j.data || []);
+      }
     } catch(e) {}
 
     if (!bailsMatches.length && !extMatches.length) {

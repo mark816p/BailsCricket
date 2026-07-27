@@ -88,7 +88,9 @@ const LiveCricketPage = (() => {
 
   function renderList() {
     Utils.setActivePage('');
-    const list = _filtered();
+    const list = typeof LiveCricket !== 'undefined' && LiveCricket.sortMatchesByPopularity
+      ? LiveCricket.sortMatchesByPopularity(_filtered())
+      : _filtered();
     const hadFocus = document.activeElement && document.activeElement.id === 'ext-search-inp';
 
     Utils.render(`

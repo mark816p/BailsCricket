@@ -1,6 +1,8 @@
 // BAILS — DASHBOARD
 const DashboardPage = (() => {
   let _pollInterval = null;
+  let _popularVisibleCount = 5;
+  let _popularMatches = [];
 
   function startPolling() {
     stopPolling();
@@ -22,6 +24,7 @@ const DashboardPage = (() => {
   }
 
   async function render() {
+    _popularVisibleCount = 5;
     Utils.setActivePage('dashboard');
     const user    = Auth.getUser();
     const profile = Auth.getProfile();
@@ -57,7 +60,7 @@ const DashboardPage = (() => {
       <div class="dash-layout">
         <div class="dash-main">
           <div class="section-header">
-            <span class="section-title">🏏 Live &amp; Upcoming Matches</span>
+            <span class="section-title">🔥 Popular Matches</span>
             <div style="display:flex;align-items:center;gap:8px">
               <span id="stale-data-warning" class="text-xs" style="display:none;color:var(--gold)">⚠️ API Limit (Delayed Data)</span>
             </div>
@@ -203,24 +206,15 @@ const DashboardPage = (() => {
 
   async function loadNearbyMatches() {
     const list = document.getElementById('nearby-list'); if (!list) return;
-    let bailsMatches = [];
     let extMatches = [];
     let staleData = false;
-
-    try {
-      const snap = await db.collection('matches').where('status','==','live').limit(6).get();
-      bailsMatches = snap.docs.map(d => ({ isInternal: true, id:d.id, ...d.data() }));
-      if (bailsMatches.length < 6) {
-        const up = await db.collection('matches').where('status','==','upcoming')
-          .orderBy('scheduledAt').limit(6-bailsMatches.length).get();
-        bailsMatches = bailsMatches.concat(up.docs.map(d => ({ isInternal: true, id:d.id, ...d.data() })));
-      }
-    } catch(e) {}
 
     if (typeof LiveCricket !== 'undefined') {
       try {
         const extData = await LiveCricket.refreshIfStale(false);
-        extMatches = (extData.matches || []).map(m => ({ ...m, isExternal: true }));
+        extMatches = (extData.matches || []).filter(m => {
+          return m.isLive || m.isUpcoming || (m.isCompleted && LiveCricket.isWithinPast3Days(m));
+        }).map(m => ({ ...m, isExternal: true }));
         if (extData.budgetExhausted) staleData = true;
       } catch(e) { console.warn('Live cricket fetch error in dashboard', e); }
     }
@@ -228,23 +222,37 @@ const DashboardPage = (() => {
     const warningEl = document.getElementById('stale-data-warning');
     if (warningEl && staleData) warningEl.style.display = 'inline-block';
 
-    const allMatches = [...bailsMatches, ...extMatches];
-    
-    allMatches.sort((a, b) => {
-      const aLive = a.isExternal ? a.isLive : (a.status === 'live');
-      const bLive = b.isExternal ? b.isLive : (b.status === 'live');
-      if (aLive && !bLive) return -1;
-      if (!aLive && bLive) return 1;
-      const aTime = a.scheduledAt || 0;
-      const bTime = b.scheduledAt || 0;
-      return bTime > aTime ? 1 : (bTime < aTime ? -1 : 0);
-    });
+    _popularMatches = typeof LiveCricket !== 'undefined' && LiveCricket.sortMatchesByPopularity
+      ? LiveCricket.sortMatchesByPopularity(extMatches)
+      : extMatches;
 
-    if (!allMatches.length) {
-      list.innerHTML = `<div class="empty-state" style="padding:32px"><div class="empty-icon">🏟️</div><div class="empty-title">No matches found</div><div class="empty-desc">Live and upcoming matches will appear here.</div></div>`;
+    renderPopularMatchesList();
+  }
+
+  function renderPopularMatchesList() {
+    const list = document.getElementById('nearby-list'); if (!list) return;
+    if (!_popularMatches.length) {
+      list.innerHTML = `<div class="empty-state" style="padding:32px"><div class="empty-icon">🏟️</div><div class="empty-title">No matches found</div><div class="empty-desc">Popular matches will appear here.</div></div>`;
       return;
     }
-    list.innerHTML = `<div class="list-gap">` + allMatches.map(m => m.isExternal ? extMatchCard(m) : matchCard(m)).join('') + `</div>`;
+
+    const visible = _popularMatches.slice(0, _popularVisibleCount);
+    const remaining = _popularMatches.length - _popularVisibleCount;
+    
+    let html = `<div class="list-gap">` + visible.map(m => extMatchCard(m)).join('') + `</div>`;
+    if (remaining > 0) {
+      html += `<div style="text-align:center;margin-top:16px;">
+        <button class="btn btn-outline btn-sm" onclick="DashboardPage.loadMorePopularMatches()">
+          ⬇️ Load More (${remaining} remaining)
+        </button>
+      </div>`;
+    }
+    list.innerHTML = html;
+  }
+
+  function loadMorePopularMatches() {
+    _popularVisibleCount += 5;
+    renderPopularMatchesList();
   }
 
   function extMatchCard(m) {
@@ -347,5 +355,5 @@ const DashboardPage = (() => {
     </a>`;
   }
 
-  return { render, acceptInv, declineInv };
+  return { render, acceptInv, declineInv, loadMorePopularMatches };
 })();

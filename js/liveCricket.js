@@ -346,5 +346,76 @@ const LiveCricket = (() => {
     }
   }
 
-  return { refreshIfStale, getCachedList, getMatchDetail, classifyGender };
+  function isWithinPast3Days(m) {
+    if (m.isLive || m.isUpcoming || m.status === 'live' || m.status === 'upcoming') return true;
+    const dateStr = m.dateGMT || m.dateTimeGMT || m.date || m.scheduledAt;
+    if (!dateStr) return true;
+    const ts = new Date(dateStr).getTime();
+    if (isNaN(ts)) return true;
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    return (Date.now() - ts) <= threeDaysMs;
+  }
+
+  function calculatePopularityScore(m) {
+    let score = 0;
+    const isLive = m.isLive || m.status === 'live';
+    const isUpcoming = m.isUpcoming || m.status === 'upcoming';
+    const isCompleted = m.isCompleted || m.status === 'completed';
+
+    // Status points
+    if (isLive) score += 10000;
+    else if (isUpcoming) score += 3000;
+    else if (isCompleted) score += 1000;
+
+    // High profile teams and leagues
+    const t1 = (m.team1 && m.team1.name ? m.team1.name : String(m.team1 || '')).toLowerCase();
+    const t2 = (m.team2 && m.team2.name ? m.team2.name : String(m.team2 || '')).toLowerCase();
+    const name = String(m.name || '').toLowerCase();
+    const matchType = String(m.matchType || '').toLowerCase();
+    const hay = `${t1} ${t2} ${name} ${matchType}`.toLowerCase();
+
+    const topTeams = ['india', 'australia', 'england', 'pakistan', 'south africa', 'new zealand', 'west indies', 'sri lanka', 'bangladesh', 'afghanistan'];
+    topTeams.forEach(team => {
+      if (hay.includes(team)) score += 500;
+    });
+
+    const topLeagues = ['ipl', 'bbl', 'psl', 'cpl', 'wpl', 'the hundred', 'mlc', 'mumbai indians', 'rcb', 'csk', 'kkr', 'srh', 'dc', 'world cup', 'icc', 't20i', 'odi', 'test'];
+    topLeagues.forEach(l => {
+      if (hay.includes(l)) score += 400;
+    });
+
+    if (m.gender === 'women') score += 200;
+
+    // Excitement / thriller bonuses
+    const s1 = (m.team1 && m.team1.score ? m.team1.score : '');
+    const s2 = (m.team2 && m.team2.score ? m.team2.score : '');
+    const scoresHay = `${s1} ${s2} ${m.statusText || ''}`.toLowerCase();
+    if (scoresHay.includes('won by 1 run') || scoresHay.includes('won by 2 run') || scoresHay.includes('won by 1 wkt') || scoresHay.includes('won by 2 wkt') || scoresHay.includes('won by 1 wicket') || scoresHay.includes('won by 2 wicket') || scoresHay.includes('super over') || scoresHay.includes('tie')) {
+      score += 600;
+    }
+
+    return score;
+  }
+
+  function sortMatchesByPopularity(matches) {
+    if (!Array.isArray(matches)) return [];
+    return matches.slice().sort((a, b) => {
+      const scoreA = calculatePopularityScore(a);
+      const scoreB = calculatePopularityScore(b);
+      if (scoreA !== scoreB) return scoreB - scoreA; // Highest score first
+
+      // Tie breaker based on date/scheduled time
+      const timeA = new Date(a.dateGMT || a.dateTimeGMT || a.date || a.scheduledAt || 0).getTime();
+      const timeB = new Date(b.dateGMT || b.dateTimeGMT || b.date || b.scheduledAt || 0).getTime();
+      
+      const aLive = a.isLive || a.status === 'live';
+      if (aLive || !a.isUpcoming) {
+        return timeB - timeA; // Most recent first for live/completed
+      } else {
+        return timeA - timeB; // Soonest first for upcoming
+      }
+    });
+  }
+
+  return { refreshIfStale, getCachedList, getMatchDetail, classifyGender, calculatePopularityScore, sortMatchesByPopularity, isWithinPast3Days };
 })();
