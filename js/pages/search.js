@@ -11,6 +11,8 @@ const SearchPage = (() => {
   let _matchTeam2 = '';
   let _matchDateFrom = '';
   let _matchDateTo   = '';
+  let _showMen       = true;
+  let _showWomen     = true;
 
   const EXT_API = (typeof LiveCricketConfig !== 'undefined' && LiveCricketConfig.API_BASE)
     ? LiveCricketConfig.API_BASE
@@ -38,11 +40,19 @@ const SearchPage = (() => {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input class="search-input" type="search" id="search-input" placeholder="Search…" autocomplete="off"/>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
+      <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px">
         ${['player','team','tournament','match'].map(t =>
           `<button class="btn btn-sm ${t===activeType?'btn-accent':'btn-outline'}" id="filter-${t}" onclick="SearchPage.setType('${t}')">
             ${{player:'👤 Player',team:'👕 Team',tournament:'🏆 Tournament',match:'🏏 Match'}[t]}
           </button>`).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:var(--text);background:var(--surface2);padding:4px 10px;border-radius:16px;border:1px solid var(--border)">
+          <input type="checkbox" id="search-chk-men" ${_showMen ? 'checked' : ''} onchange="SearchPage.onGenderCheckboxChange()"/> Men's
+        </label>
+        <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:var(--text);background:var(--surface2);padding:4px 10px;border-radius:16px;border:1px solid var(--border)">
+          <input type="checkbox" id="search-chk-women" ${_showWomen ? 'checked' : ''} onchange="SearchPage.onGenderCheckboxChange()"/> Women's
+        </label>
       </div>
       <div id="search-results">${emptyState()}</div>
     `);
@@ -110,7 +120,13 @@ const SearchPage = (() => {
       fetch(`${EXT_API}/searchPlayers?q=${encodeURIComponent(q)}&limit=15`).then(r=>r.ok?r.json():{data:[]}).catch(()=>({data:[]}))
     ]);
     const bailsUsers = bailsSnap.status==='fulfilled' ? bailsSnap.value.docs.map(d=>({...d.data(),id:d.id,_isBails:true})) : [];
-    const official   = (extResult.status==='fulfilled' && extResult.value?.data) ? extResult.value.data.filter(p => !bailsUsers.some(u=>(u.displayName||'').toLowerCase()===p.name.toLowerCase())) : [];
+    const official   = (extResult.status==='fulfilled' && extResult.value?.data) ? extResult.value.data.filter(p => {
+      if (bailsUsers.some(u=>(u.displayName||'').toLowerCase()===p.name.toLowerCase())) return false;
+      const isW = p.gender === 'women' || (p.name && p.name.toLowerCase().includes('women'));
+      if (isW && !_showWomen) return false;
+      if (!isW && !_showMen) return false;
+      return true;
+    }) : [];
     if (!bailsUsers.length && !official.length) { res.innerHTML = noResults(q); return; }
 
     let html = '<div class="list-gap">';
@@ -167,6 +183,9 @@ const SearchPage = (() => {
 
     // Official teams fuzzy search
     const official = _teamsList.filter(t => {
+      const isW = t.gender === 'women' || (t.name && t.name.toLowerCase().includes('women')) || (t.type && t.type.toLowerCase().includes('women'));
+      if (isW && !_showWomen) return false;
+      if (!isW && !_showMen) return false;
       const hay = `${t.name} ${t.country||''} ${t.type||''}`.toLowerCase();
       return hay.includes(qLow);
     }).slice(0,20);
@@ -222,6 +241,9 @@ const SearchPage = (() => {
     const bailsTourneys = bailsSnap ? bailsSnap.docs.map(d=>({...d.data(),id:d.id,_isBails:true})) : [];
 
     const official = _tourneyList.filter(t => {
+      const isW = t.gender === 'women' || (t.name && t.name.toLowerCase().includes('women')) || (t.type && t.type.toLowerCase().includes('women'));
+      if (isW && !_showWomen) return false;
+      if (!isW && !_showMen) return false;
       const hay = `${t.name} ${t.country||''} ${t.type||''}`.toLowerCase();
       return hay.includes(qLow);
     }).slice(0,20);
@@ -380,9 +402,16 @@ const SearchPage = (() => {
       const r = await fetch(`${EXT_API}/searchMatches?${params}`);
       if (r.ok) {
         const j = await r.json();
+        let raw = j.data || [];
+        raw = raw.filter(m => {
+          const isW = m.gender === 'women' || (m.name && m.name.toLowerCase().includes('women')) || (m.matchType && m.matchType.toLowerCase().includes('women'));
+          if (isW && !_showWomen) return false;
+          if (!isW && !_showMen) return false;
+          return true;
+        });
         extMatches = typeof LiveCricket !== 'undefined' && LiveCricket.sortMatchesByPopularity
-          ? LiveCricket.sortMatchesByPopularity(j.data || [])
-          : (j.data || []);
+          ? LiveCricket.sortMatchesByPopularity(raw)
+          : raw;
       }
     } catch(e) {}
 
@@ -420,5 +449,18 @@ const SearchPage = (() => {
     return `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No results for "${Utils.escapeHtml(q)}"</div></div>`;
   }
 
-  return { render, setType, _teamAutocomplete, _pickTeam, _dateChange, _runMatchSearch };
+  function onGenderCheckboxChange() {
+    const mChk = document.getElementById('search-chk-men');
+    const wChk = document.getElementById('search-chk-women');
+    _showMen = mChk ? mChk.checked : true;
+    _showWomen = wChk ? wChk.checked : true;
+    const inp = document.getElementById('search-input');
+    if (inp && inp.value.trim()) {
+      doSearch(inp.value.trim());
+    } else if (activeType === 'match') {
+      _runMatchSearch();
+    }
+  }
+
+  return { render, setType, _teamAutocomplete, _pickTeam, _dateChange, _runMatchSearch, onGenderCheckboxChange };
 })();

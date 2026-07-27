@@ -3,6 +3,7 @@ const DashboardPage = (() => {
   let _pollInterval = null;
   let _popularVisibleCount = 5;
   let _popularMatches = [];
+  let _allPopularMatches = [];
 
   function startPolling() {
     stopPolling();
@@ -59,10 +60,16 @@ const DashboardPage = (() => {
 
       <div class="dash-layout">
         <div class="dash-main">
-          <div class="section-header">
+          <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <span class="section-title">🔥 Popular Matches</span>
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:12px">
               <span id="stale-data-warning" class="text-xs" style="display:none;color:var(--gold)">⚠️ API Limit (Delayed Data)</span>
+              <label style="font-size:12px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;user-select:none;color:var(--text);background:var(--surface2);padding:3px 8px;border-radius:6px;border:1px solid var(--border)">
+                <input type="checkbox" id="pop-filter-men" checked onchange="DashboardPage.onPopularFilterChange()"/> Men's
+              </label>
+              <label style="font-size:12px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;user-select:none;color:var(--text);background:var(--surface2);padding:3px 8px;border-radius:6px;border:1px solid var(--border)">
+                <input type="checkbox" id="pop-filter-women" checked onchange="DashboardPage.onPopularFilterChange()"/> Women's
+              </label>
             </div>
           </div>
           <div id="nearby-list"><div class="text-muted text-sm">Loading matches…</div></div>
@@ -222,10 +229,24 @@ const DashboardPage = (() => {
     const warningEl = document.getElementById('stale-data-warning');
     if (warningEl && staleData) warningEl.style.display = 'inline-block';
 
-    _popularMatches = typeof LiveCricket !== 'undefined' && LiveCricket.sortMatchesByPopularity
+    _allPopularMatches = typeof LiveCricket !== 'undefined' && LiveCricket.sortMatchesByPopularity
       ? LiveCricket.sortMatchesByPopularity(extMatches)
       : extMatches;
 
+    onPopularFilterChange();
+  }
+
+  function onPopularFilterChange() {
+    const showMen = document.getElementById('pop-filter-men') ? document.getElementById('pop-filter-men').checked : true;
+    const showWomen = document.getElementById('pop-filter-women') ? document.getElementById('pop-filter-women').checked : true;
+
+    _popularMatches = _allPopularMatches.filter(m => {
+      const isW = m.gender === 'women' || (m.name && m.name.toLowerCase().includes('women')) || (m.matchType && m.matchType.toLowerCase().includes('women'));
+      if (isW) return showWomen;
+      return showMen;
+    });
+
+    _popularVisibleCount = 5;
     renderPopularMatchesList();
   }
 
@@ -355,5 +376,5 @@ const DashboardPage = (() => {
     </a>`;
   }
 
-  return { render, acceptInv, declineInv, loadMorePopularMatches };
+  return { render, acceptInv, declineInv, loadMorePopularMatches, onPopularFilterChange };
 })();

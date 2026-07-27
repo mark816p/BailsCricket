@@ -14,7 +14,8 @@ const LiveCricketPage = (() => {
   let _matches = [];
   let _fetchedAtMs = 0;
   let _statusFilter = 'all';   // all | live | upcoming | completed
-  let _genderFilter = 'all';   // all | men | women
+  let _showMen      = true;
+  let _showWomen    = true;
   let _searchQuery  = '';
   let _detailId = null;
   let _detailMatch = null;     // populated by getMatchDetail() — may include a trimmed scorecard
@@ -76,8 +77,9 @@ const LiveCricketPage = (() => {
     return _matches.filter(m => {
       if (_statusFilter === 'live'      && !m.isLive)      return false;
       if (_statusFilter === 'upcoming'  && !m.isUpcoming)  return false;
-      if (_statusFilter === 'completed' && !m.isCompleted) return false;
-      if (_genderFilter !== 'all' && m.gender !== _genderFilter) return false;
+      const isW = m.gender === 'women' || (m.name && m.name.toLowerCase().includes('women')) || (m.matchType && m.matchType.toLowerCase().includes('women'));
+      if (isW && !_showWomen) return false;
+      if (!isW && !_showMen) return false;
       if (q) {
         const hay = `${m.name} ${m.team1.name} ${m.team2.name} ${m.matchType} ${m.venue}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -112,11 +114,13 @@ const LiveCricketPage = (() => {
             ${s==='all'?'All':s==='live'?'🔴 Live':s==='upcoming'?'Upcoming':'Completed'}
           </button>`).join('')}
       </div>
-      <div class="chip-row" style="margin-bottom:18px">
-        ${['all','men','women'].map(g => `
-          <button class="filter-chip ${_genderFilter===g?'active':''}" onclick="LiveCricketPage.setGenderFilter('${g}')">
-            ${g==='all'?'All':g==='men'?"Men's":"Women's"}
-          </button>`).join('')}
+      <div class="chip-row" style="margin-bottom:18px;display:flex;align-items:center;gap:14px">
+        <label style="font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:var(--text);background:var(--surface2);padding:6px 12px;border-radius:20px;border:1px solid var(--border)">
+          <input type="checkbox" id="live-chk-men" ${_showMen ? 'checked' : ''} onchange="LiveCricketPage.onGenderCheckboxChange()"/> Men's Matches
+        </label>
+        <label style="font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:var(--text);background:var(--surface2);padding:6px 12px;border-radius:20px;border:1px solid var(--border)">
+          <input type="checkbox" id="live-chk-women" ${_showWomen ? 'checked' : ''} onchange="LiveCricketPage.onGenderCheckboxChange()"/> Women's Matches
+        </label>
       </div>
 
       <div id="live-cricket-list">
@@ -261,7 +265,13 @@ const LiveCricketPage = (() => {
   }
 
   function setStatusFilter(s) { _statusFilter = s; renderList(); }
-  function setGenderFilter(g) { _genderFilter = g; renderList(); }
+  function onGenderCheckboxChange() {
+    const mChk = document.getElementById('live-chk-men');
+    const wChk = document.getElementById('live-chk-women');
+    _showMen = mChk ? mChk.checked : true;
+    _showWomen = wChk ? wChk.checked : true;
+    renderList();
+  }
 
   async function forceRefresh() {
     Utils.toast('Refreshing…', 'info');
@@ -278,5 +288,5 @@ const LiveCricketPage = (() => {
     if (_detailId) { await loadAndRenderDetail(); } else { renderList(); }
   }
 
-  return { render, setStatusFilter, setGenderFilter, forceRefresh, onSearchInput };
+  return { render, setStatusFilter, onGenderCheckboxChange, forceRefresh, onSearchInput };
 })();
