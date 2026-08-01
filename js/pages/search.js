@@ -144,7 +144,7 @@ const SearchPage = (() => {
     for (const p of official) {
       const roleColor = {'Batter':'var(--accent)','Bowler':'var(--blue)','All-rounder':'var(--gold)','Wicket-keeper':'var(--green)'}[p.role]||'var(--muted)';
       const pseudoUsername = '@' + p.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      html += `<div class="card card-body" style="display:flex;align-items:center;gap:14px">
+      html += `<a href="#/player/ext_${encodeURIComponent(p.name)}" class="card card-clickable card-body" style="display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${flag(p.country)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:15px">${p.name}</div>
@@ -156,7 +156,8 @@ const SearchPage = (() => {
             <span style="color:var(--muted);opacity:.6;font-size:10px">🌐 Official</span>
           </div>
         </div>
-      </div>`;
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>`;
     }
     html += '</div>';
     if (official.length) html += `<div class="text-xs text-muted" style="margin-top:8px;padding:0 4px">🌐 Official cricket data · 32k+ players</div>`;
@@ -188,6 +189,12 @@ const SearchPage = (() => {
       if (!isW && !_showMen) return false;
       const hay = `${t.name} ${t.country||''} ${t.type||''}`.toLowerCase();
       return hay.includes(qLow);
+    }).sort((a,b) => {
+      const aInt = (a.type || '').toLowerCase().includes('international');
+      const bInt = (b.type || '').toLowerCase().includes('international');
+      if (aInt && !bInt) return -1;
+      if (!aInt && bInt) return 1;
+      return 0;
     }).slice(0,20);
 
     if (!bailsTeams.length && !official.length) { res.innerHTML = noResults(q); return; }
@@ -207,7 +214,7 @@ const SearchPage = (() => {
     }
     for (const t of official) {
       const typeColor = {'International':'var(--accent)','IPL':'var(--gold)','BBL':'var(--blue)','PSL':'var(--green)','CPL':'var(--red)','Ranji Trophy':'var(--orange, #f90)','County Cricket':'var(--purple,#8b5cf6)'}[t.type]||'var(--muted)';
-      html += `<div class="card card-body" style="display:flex;align-items:center;gap:14px">
+      html += `<a href="#/team/ext_${encodeURIComponent(t.name)}" class="card card-clickable card-body" style="display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${flag(t.country)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:15px">${t.name}</div>
@@ -217,7 +224,8 @@ const SearchPage = (() => {
             <span style="color:var(--muted);opacity:.6;font-size:10px">🌐 Official</span>
           </div>
         </div>
-      </div>`;
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>`;
     }
     html += '</div>';
     if (official.length) html += `<div class="text-xs text-muted" style="margin-top:8px;padding:0 4px">🌐 Official data · 300+ teams</div>`;
@@ -316,18 +324,7 @@ const SearchPage = (() => {
           <div id="match-team2-dd" class="search-autocomplete-dd" style="display:none"></div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-          <div class="form-group">
-            <label style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;display:block">From date</label>
-            <input type="date" id="match-date-from" class="form-control" value="${_matchDateFrom}"
-                   onchange="SearchPage._dateChange('from',this.value)" style="color-scheme:dark"/>
-          </div>
-          <div class="form-group">
-            <label style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;display:block">To date</label>
-            <input type="date" id="match-date-to" class="form-control" value="${_matchDateTo}"
-                   onchange="SearchPage._dateChange('to',this.value)" style="color-scheme:dark"/>
-          </div>
-        </div>
+
 
         <button class="btn btn-accent btn-full" onclick="SearchPage._runMatchSearch()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -378,18 +375,37 @@ const SearchPage = (() => {
     // Bails internal matches
     let bailsMatches = [];
     try {
-      const t1Low = _matchTeam1.toLowerCase();
-      const snap = await db.collection('matches')
-        .where('team1NameLower', '>=', t1Low)
-        .where('team1NameLower', '<=', t1Low + '\uf8ff')
-        .limit(20).get();
-      bailsMatches = snap.docs.map(d => ({ id: d.id, ...d.data(), _isBails: true }));
-      if (_matchTeam2) {
-        const t2Low = _matchTeam2.toLowerCase();
-        bailsMatches = bailsMatches.filter(m =>
-          (m.team2NameLower || '').includes(t2Low) || (m.team1NameLower || '').includes(t2Low)
-        );
+      if (_matchTeam1 && !_matchTeam2) {
+        const t1Low = _matchTeam1.toLowerCase();
+        const snap = await db.collection('matches')
+          .where('team1NameLower', '>=', t1Low)
+          .where('team1NameLower', '<=', t1Low + '\uf8ff')
+          .limit(20).get();
+        bailsMatches = snap.docs.map(d => ({ id: d.id, ...d.data(), _isBails: true }));
+      } else if (_matchTeam1 && _matchTeam2) {
+        // Find teams by name
+        const snaps = await Promise.all([
+          db.collection('teams').where('nameLower','==',_matchTeam1.toLowerCase()).limit(1).get(),
+          db.collection('teams').where('nameLower','==',_matchTeam2.toLowerCase()).limit(1).get()
+        ]);
+        const teamIds = snaps.map(s => s.empty ? null : s.docs[0].id);
+        if (!teamIds[0] && !teamIds[1]) {
+          bailsMatches = [];
+        } else {
+          let q = db.collection('matches');
+          if (teamIds[0]) q = q.where('participants', 'array-contains', teamIds[0]);
+          if (teamIds[1]) q = q.where('participants', 'array-contains', teamIds[1]);
+          const snap = await q.get();
+          bailsMatches = snap.docs.map(d=>({id:d.id,...d.data(),_isBails:true}));
+        }
       }
+
+      // Sort Bails matches most recent to older
+      bailsMatches.sort((a,b) => {
+        const da = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
+        const db = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
+        return db - da;
+      });
     } catch(e) {}
 
     // External (Cricbuzz scrape via backend)
@@ -397,8 +413,6 @@ const SearchPage = (() => {
     try {
       const params = new URLSearchParams({ team1: _matchTeam1 });
       if (_matchTeam2) params.set('team2', _matchTeam2);
-      if (_matchDateFrom) params.set('from', _matchDateFrom);
-      if (_matchDateTo)   params.set('to',   _matchDateTo);
       const r = await fetch(`${EXT_API}/searchMatches?${params}`);
       if (r.ok) {
         const j = await r.json();
@@ -409,9 +423,13 @@ const SearchPage = (() => {
           if (!isW && !_showMen) return false;
           return true;
         });
-        extMatches = typeof LiveCricket !== 'undefined' && LiveCricket.sortMatchesByPopularity
-          ? LiveCricket.sortMatchesByPopularity(raw)
-          : raw;
+        
+        // Sort extMatches most recent to older
+        extMatches = raw.sort((a,b) => {
+          const da = a.dateGMT || a.date || a.scheduledAt;
+          const db = b.dateGMT || b.date || b.scheduledAt;
+          return new Date(db).getTime() - new Date(da).getTime();
+        });
       }
     } catch(e) {}
 

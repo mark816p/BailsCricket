@@ -4,6 +4,9 @@ const TeamDetailPage = (() => {
 
   async function render(path, parts, params) {
     teamId = params.id;
+    if (teamId.startsWith('ext_')) {
+      return renderExternalTeam(decodeURIComponent(teamId.slice(4)));
+    }
     Utils.setActivePage('tournaments');
     Utils.render(`<div class="text-muted text-sm" style="padding:40px;text-align:center">Loading team…</div>`);
 
@@ -527,6 +530,34 @@ const TeamDetailPage = (() => {
       Utils.toast('Failed to link. Check connection.','error');
       if (btn) { btn.disabled = false; btn.textContent = 'Yes, link accounts'; }
     }
+  }
+
+  function renderExternalTeam(extName) {
+    const html = `
+    <div class="dash-layout">
+      <div class="dash-main">
+        <div class="card card-body" style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+          <div style="width:80px;height:80px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;border:2px solid var(--border)">
+            ${extName.charAt(0)}
+          </div>
+          <div style="flex:1">
+            <div style="font-size:24px;font-weight:800">${Utils.escapeHtml(extName)}</div>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+              <span class="badge" style="background:var(--surface2);color:var(--gold)">Official Team</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="Utils.toast('Added to favorites!', 'success')">⭐ Follow</button>
+        </div>
+        
+        <div class="empty-state" style="padding:40px 20px">
+          <div class="empty-icon">🏆</div>
+          <div class="empty-title">Official Matches</div>
+          <div class="empty-desc">This is an external team. Detailed match-by-match stats and player lists are coming soon.</div>
+        </div>
+      </div>
+    </div>
+    `;
+    Utils.render(html);
   }
 
   return {

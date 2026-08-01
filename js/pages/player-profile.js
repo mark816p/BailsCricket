@@ -2,6 +2,10 @@
 const PlayerProfilePage = (() => {
   async function render(path, parts, params) {
     const uid = params.uid;
+    if (uid.startsWith('ext_')) {
+      return renderExternalPlayer(decodeURIComponent(uid.slice(4)));
+    }
+    
     Utils.render(`<div class="text-muted text-sm" style="padding:40px;text-align:center">Loading player…</div>`);
     try {
       const snap = await db.collection('users').doc(uid).get();
@@ -98,6 +102,55 @@ const PlayerProfilePage = (() => {
       `);
     } catch (e) {
       Utils.render('<p class="text-muted" style="padding:40px;text-align:center">Error loading player profile.</p>');
+    }
+  }
+
+  async function renderExternalPlayer(extName) {
+    Utils.render(`<div class="text-muted text-sm" style="padding:40px;text-align:center">Loading ${Utils.escapeHtml(extName)}…</div>`);
+    try {
+      const url = \`https://bails-cricket-api.vercel.app/api/searchPlayers?q=\${encodeURIComponent(extName)}\`;
+      const res = await fetch(url);
+      const data = await res.json();
+      let p = data.data && data.data.length > 0 ? data.data[0] : null;
+      if (p && p.name.toLowerCase() !== extName.toLowerCase()) {
+         p = data.data.find(x => x.name.toLowerCase() === extName.toLowerCase()) || p;
+      }
+      if (!p) {
+         p = { name: extName, role: 'Player', country: '', image: '', batStyle: '', bowlStyle: '' };
+      }
+      
+      const pic = p.image || Utils.initialsAvatar(p.name||'?');
+      const roleBadge = p.role ? \`<span class="badge" style="background:var(--surface2);color:var(--text)">\${p.role}</span>\` : '';
+      const ctryBadge = p.country ? \`<span class="badge" style="background:var(--surface2);color:var(--text)">\${p.country}</span>\` : '';
+      
+      const html = \`
+      <div class="dash-layout">
+        <div class="dash-main">
+          <!-- Profile Header -->
+          <div class="card card-body" style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+            <div style="width:80px;height:80px;border-radius:50%;background:var(--surface2);background-image:url('\${pic}');background-size:cover;background-position:center;border:2px solid var(--border)"></div>
+            <div style="flex:1">
+              <div style="font-size:24px;font-weight:800">\${Utils.escapeHtml(p.name)}</div>
+              <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">\${roleBadge}\${ctryBadge}</div>
+              <div style="margin-top:8px;font-size:13px;color:var(--muted)">
+                \${p.batStyle ? \`<div>🏏 \${p.batStyle}</div>\` : ''}
+                \${p.bowlStyle ? \`<div>🥎 \${p.bowlStyle}</div>\` : ''}
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="Utils.toast('Added to favorites!', 'success')">⭐ Follow</button>
+          </div>
+          
+          <div class="empty-state" style="padding:40px 20px">
+            <div class="empty-icon">📊</div>
+            <div class="empty-title">Official Stats</div>
+            <div class="empty-desc">This is an external player. Detailed match-by-match stats from international/domestic leagues are coming soon.</div>
+          </div>
+        </div>
+      </div>
+      \`;
+      Utils.render(html);
+    } catch (e) {
+      Utils.render('<p class="text-muted" style="padding:40px;text-align:center">Error loading player.</p>');
     }
   }
 
